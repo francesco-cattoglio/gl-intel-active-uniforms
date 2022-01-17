@@ -1,125 +1,19 @@
 #version 320 es
-#extension GL_EXT_texture_shadow_lod : require
 
 precision highp float;
 precision highp int;
 
 layout(local_size_x = 16, local_size_y = 1, local_size_z = 1) in;
 
-struct MatcapVertex {
-    vec4 position;
-    vec4 normal;
-    vec2 uv_coords;
-    vec2 padding;
-};
-layout(std430, binding = 0) readonly buffer InputBuffer_block_0Compute {
-    vec4 positions[];
-} _group_0_binding_0_cs;
-
-layout(std430, binding = 1) buffer OutputBuffer_block_1Compute {
-    MatcapVertex vertices[];
-} _group_0_binding_1_cs;
-
-shared vec3 tangent_buff[16];
-
-shared vec3 ref_buff[16];
-
+layout(std430, binding = 1) buffer OutputBuffer {
+    vec2 position;
+} storage;
 
 void main() {
-    uvec3 global_id = gl_GlobalInvocationID;
-    vec2 section_points[6];
-    vec3 tangent = vec3(0.0, 0.0, 0.0);
-    vec3 ref_curr = vec3(0.0, 0.0, 0.0);
     int i = 0;
-    int i_1 = 0;
-    section_points = vec2[6](vec2(0.019999999552965164, 0.0), vec2(0.006180339492857456, 0.019021131098270416), vec2(-0.016180340200662613, 0.011755703017115593), vec2(-0.016180338338017464, -0.011755706742405891), vec2(0.00618034228682518, -0.019021129235625267), vec2(0.019999999552965164, 3.4969109830029765e-9));
-    int idx = int(global_id.x);
-    if ((idx == 0)) {
-        vec4 _e34 = _group_0_binding_0_cs.positions[idx];
-        vec4 _e41 = _group_0_binding_0_cs.positions[(idx + 1)];
-        vec4 _e49 = _group_0_binding_0_cs.positions[(idx + 2)];
-        tangent = (((-1.5 * _e34) + (2.0 * _e41)) - (0.5 * _e49)).xyz;
-    } else {
-        if ((idx == (16 - 1))) {
-            vec4 _e59 = _group_0_binding_0_cs.positions[idx];
-            vec4 _e66 = _group_0_binding_0_cs.positions[(idx - 1)];
-            vec4 _e74 = _group_0_binding_0_cs.positions[(idx - 2)];
-            tangent = (((1.5 * _e59) - (2.0 * _e66)) + (0.5 * _e74)).xyz;
-        } else {
-            vec4 _e83 = _group_0_binding_0_cs.positions[(idx - 1)];
-            vec4 _e90 = _group_0_binding_0_cs.positions[(idx + 1)];
-            tangent = ((-0.5 * _e83) + (0.5 * _e90)).xyz;
-        }
-    }
-    vec3 _e94 = tangent;
-    tangent = normalize(_e94);
-    vec3 _e97 = tangent;
-    tangent_buff[idx] = _e97;
-    groupMemoryBarrier();
-    if ((idx == 0)) {
-        float _e102 = tangent.x;
-        if ((abs(_e102) > 0.20000000298023224)) {
-            ref_curr = vec3(0.0, 0.0, 1.0);
-        } else {
-            ref_curr = vec3(1.0, 0.0, 0.0);
-        }
-        i = 0;
-        bool loop_init = true;
-        while(true) {
-            if (!loop_init) {
-            int _e118 = i;
-            i = (_e118 + 1);
-            }
-            loop_init = false;
-            int _e116 = i;
-            if ((_e116 < 16)) {
-            } else {
-                break;
-            }
-            int _e121 = i;
-            vec3 next_dir = tangent_buff[_e121];
-            int _e124 = i;
-            vec3 _e126 = ref_curr;
-            vec3 _e127 = ref_curr;
-            ref_buff[_e124] = normalize((_e126 - (next_dir * dot(_e127, next_dir))));
-            int _e132 = i;
-            vec3 _e134 = ref_buff[_e132];
-            ref_curr = _e134;
-        }
-    }
-    groupMemoryBarrier();
-    vec4 section_position = _group_0_binding_0_cs.positions[idx];
-    vec3 _e138 = tangent;
-    vec4 frame_forward = vec4(_e138, 0.0);
-    vec3 ref_vector = ref_buff[idx];
-    vec4 frame_up = vec4(ref_vector, 0.0);
-    vec3 left_dir = (-1.0 * normalize(cross(frame_forward.xyz, frame_up.xyz)));
-    vec4 frame_left = vec4(left_dir, 0.0);
-    mat4x4 new_basis = mat4x4(frame_forward, frame_left, frame_up, section_position);
-    bool loop_init_1 = true;
+    vec2 points[1] = vec2[1](vec2(0.0));
     while(true) {
-        if (!loop_init_1) {
-        int _e159 = i_1;
-        i_1 = (_e159 + 1);
-        }
-        loop_init_1 = false;
-        int _e156 = i_1;
-        if ((_e156 < 6)) {
-        } else {
-            break;
-        }
-        int _e164 = i_1;
-        int out_idx = ((idx * 6) + _e164);
-        int _e167 = i_1;
-        float _e170 = section_points[_e167].x;
-        int _e171 = i_1;
-        float _e174 = section_points[_e171].y;
-        vec3 section_point = vec3(0.0, _e170, _e174);
-        _group_0_binding_1_cs.vertices[out_idx].position = (new_basis * vec4(section_point, 1.0));
-        _group_0_binding_1_cs.vertices[out_idx].normal = (new_basis * vec4(normalize(section_point), 0.0));
-        int _e197 = i_1;
-        _group_0_binding_1_cs.vertices[out_idx].uv_coords = vec2((float(idx) / (float(16) - 1.0)), (float(_e197) / (float(6) - 1.0)));
-        _group_0_binding_1_cs.vertices[out_idx].padding = vec2(1.1230000257492065, 1.4559999704360962);
+        i += 1;
+        storage.position = points[i];
     }
-    return;
 }

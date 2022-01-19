@@ -3,17 +3,36 @@
 precision highp float;
 precision highp int;
 
-layout(local_size_x = 16, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
-layout(std430, binding = 1) buffer OutputBuffer {
-    vec2 position;
-} storage;
+layout(shared, binding = 0) readonly buffer InputBuffer {
+    float in_values[];
+};
+
+layout(shared, binding = 1) buffer OutputBuffer {
+    float out_values[];
+};
+
+shared float shared_buff[64];
 
 void main() {
     int i = 0;
-    vec2 points[1] = vec2[1](vec2(0.0));
-    while(true) {
-        i += 1;
-        storage.position = points[i];
+    int idx = int(gl_GlobalInvocationID.x);
+    shared_buff[idx] = in_values[idx];
+    groupMemoryBarrier();
+    if ((idx == 0)) {
+        i = 0;
+        while(true) {
+            if (i < 64) {
+            } else {
+                break;
+            }
+            shared_buff[i] = float(i);
+            i = i+1;
+        }
     }
+    groupMemoryBarrier();
+    out_values[idx] = shared_buff[idx];
+    return;
 }
+
